@@ -142,4 +142,14 @@ mysql -u fish -ppassword -h 172.88.88.2 -P6033 -e"SELECT @@port"
 mysql -u fish -ppassword -h 172.88.88.2 -P6033 --prompt 'FISH > '
 sysbench --report-interval=5 --num-threads=4 --num-requests=0 --max-time=20 --test=tests/db/oltp.lua --mysql-user='stnduser' --mysql-password='stnduser' --oltp-table-size=10000 --mysql-host=172.88.88.2 --mysql-port=6033 run
 
+
+
+xxx
+
+INSERT INTO mysql_query_rules (rule_id,active,username,match_digest,destination_hostgroup,apply) VALUES (10,1,'stnduser','^SELECT c FROM sbtest1 WHERE id=?',2,1);
+INSERT INTO mysql_query_rules (rule_id,active,username,match_digest,destination_hostgroup,apply) VALUES (20,1,'stnduser','DISTINCT c FROM sbtest1',2,1);
+
+
 ```
+
+
