@@ -12,7 +12,7 @@ docker rm -f mysql-slave-2
 ```
 - deploy proxysql
 ```docker deploy proxysql
-docker run -p --net ha-mysql --ip 172.88.88.2 16032:6032 -p 16033:6033 -p 16070:6070 -d --restart=always --name=proxysql proxysql/proxysql
+docker run --net ha-mysql --ip 172.88.88.2 -p 16032:6032 -p 16033:6033 -p 16070:6070 -d --restart=always --name=proxysql proxysql/proxysql
 ```
 
 ```docker deploy mysql
