@@ -48,7 +48,7 @@ SET GLOBAL read_only = 0;
 CREATE USER 'monitor'@'%' IDENTIFIED WITH mysql_native_password BY 'monitor';
 GRANT USAGE, REPLICATION CLIENT ON *.* TO 'monitor'@'%';
 CREATE USER 'fish'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
-GRANT USAGE, REPLICATION CLIENT ON *.* TO 'fish'@'%';
+GRANT ALL PRIVILEGES ON *.* TO 'monitor'@'%';
 exit
 exit
 
@@ -60,7 +60,7 @@ SET GLOBAL read_only = 1;
 CREATE USER 'monitor'@'%' IDENTIFIED WITH mysql_native_password BY 'monitor';
 GRANT USAGE, REPLICATION CLIENT ON *.* TO 'monitor'@'%';
 CREATE USER 'fish'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
-GRANT USAGE, REPLICATION CLIENT ON *.* TO 'fish'@'%';
+GRANT ALL PRIVILEGES ON *.* TO 'monitor'@'%';
 exit
 exit
 
@@ -72,7 +72,7 @@ SET GLOBAL read_only = 1;
 CREATE USER 'monitor'@'%' IDENTIFIED WITH mysql_native_password BY 'monitor';
 GRANT USAGE, REPLICATION CLIENT ON *.* TO 'monitor'@'%';
 CREATE USER 'fish'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
-GRANT USAGE, REPLICATION CLIENT ON *.* TO 'fish'@'%';
+GRANT ALL PRIVILEGES ON *.* TO 'monitor'@'%';
 exit
 exit
 
@@ -132,8 +132,8 @@ LOAD ADMIN VARIABLES TO RUNTIME;
 SAVE ADMIN VARIABLES TO DISK;
 ```
 ```angular2html
-mysql -u stnduser -pstnduser -h 172.88.88.2 -P6033 -e"SELECT @@port"
-
+mysql -u fish -ppassword -h 172.88.88.2 -P6033 -e"SELECT @@port"
+mysql -u fish -ppassword -h 172.88.88.2 -P6033 --prompt 'FISH > '
 sysbench --report-interval=5 --num-threads=4 --num-requests=0 --max-time=20 --test=tests/db/oltp.lua --mysql-user='stnduser' --mysql-password='stnduser' --oltp-table-size=10000 --mysql-host=172.88.88.2 --mysql-port=6033 run
 
 ```
