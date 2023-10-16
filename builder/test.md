@@ -49,6 +49,8 @@ CREATE USER 'monitor'@'%' IDENTIFIED WITH mysql_native_password BY 'monitor';
 GRANT USAGE, REPLICATION CLIENT ON *.* TO 'monitor'@'%';
 CREATE USER 'fish'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
 GRANT ALL PRIVILEGES ON *.* TO 'monitor'@'%';
+CREATE USER 'stnduser'@'%' IDENTIFIED WITH mysql_native_password BY 'stnduser';
+GRANT ALL PRIVILEGES ON *.* TO 'stnduser'@'%';
 exit
 exit
 
@@ -61,6 +63,8 @@ CREATE USER 'monitor'@'%' IDENTIFIED WITH mysql_native_password BY 'monitor';
 GRANT USAGE, REPLICATION CLIENT ON *.* TO 'monitor'@'%';
 CREATE USER 'fish'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
 GRANT ALL PRIVILEGES ON *.* TO 'monitor'@'%';
+CREATE USER 'stnduser'@'%' IDENTIFIED WITH mysql_native_password BY 'stnduser';
+GRANT ALL PRIVILEGES ON *.* TO 'stnduser'@'%';
 exit
 exit
 
@@ -73,6 +77,8 @@ CREATE USER 'monitor'@'%' IDENTIFIED WITH mysql_native_password BY 'monitor';
 GRANT USAGE, REPLICATION CLIENT ON *.* TO 'monitor'@'%';
 CREATE USER 'fish'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
 GRANT ALL PRIVILEGES ON *.* TO 'monitor'@'%';
+CREATE USER 'stnduser'@'%' IDENTIFIED WITH mysql_native_password BY 'stnduser';
+GRANT ALL PRIVILEGES ON *.* TO 'stnduser'@'%';
 exit
 exit
 
