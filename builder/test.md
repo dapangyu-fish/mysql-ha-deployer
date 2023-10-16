@@ -23,5 +23,5 @@ docker run --net ha-mysql --ip 172.88.88.5 --restart=always --name mysql-slave-2
 
 ```in proxysql
 docker exec -it proxysql bash
-mysql -u admin -padmin -h proxysql -P6032 --prompt 'ProxySQL Admin> '
+mysql -u admin -padmin -h 127.0.0.1 -P6032 --prompt 'ProxySQL Admin> '
 ```
