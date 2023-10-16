@@ -152,4 +152,16 @@ INSERT INTO mysql_query_rules (rule_id,active,username,match_digest,destination_
 
 ```
 
+```SELECE 全部到从节点
+UPDATE mysql_users SET default_hostgroup=1; # by default, all goes to HG1
+LOAD MYSQL USERS TO RUNTIME;
+SAVE MYSQL USERS TO DISK; # if you want this change to be permanent
+INSERT INTO mysql_query_rules (rule_id,active,match_digest,destination_hostgroup,apply)
+VALUES
+(1,1,'^SELECT.*FOR UPDATE$',1,1),
+(2,1,'^SELECT',2,1);
+LOAD MYSQL QUERY RULES TO RUNTIME;
+SAVE MYSQL QUERY RULES TO DISK; # if you want this change to be permanent
+```
+
 
