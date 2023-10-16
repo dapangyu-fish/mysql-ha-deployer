@@ -24,4 +24,34 @@ docker run --net ha-mysql --ip 172.88.88.5 --restart=always --name mysql-slave-2
 ```in proxysql
 docker exec -it proxysql bash
 mysql -u admin -padmin -h 127.0.0.1 -P6032 --prompt 'ProxySQL Admin> '
+SELECT * FROM mysql_servers;
+SELECT * from mysql_replication_hostgroups;
+SELECT * from mysql_query_rules;
+
+INSERT INTO mysql_servers(hostgroup_id,hostname,port) VALUES (1,'172.88.88.3',3306);
+INSERT INTO mysql_servers(hostgroup_id,hostname,port) VALUES (1,'172.88.88.4',3306);
+INSERT INTO mysql_servers(hostgroup_id,hostname,port) VALUES (1,'172.88.88.5',3306);
+```
+
+```in mysql
+docker exec -it mysql-master bash
+mysql -u root -ppassword
+CREATE USER 'monitor'@'%' IDENTIFIED BY 'password';
+GRANT USAGE, REPLICATION CLIENT ON *.* TO 'monitor'@'%';
+exit
+exit
+
+docker exec -it mysql-slave-1 bash
+mysql -u root -ppassword
+CREATE USER 'monitor'@'%' IDENTIFIED BY 'password';
+GRANT USAGE, REPLICATION CLIENT ON *.* TO 'monitor'@'%';
+exit
+exit
+
+docker exec -it mysql-slave-2 bash
+mysql -u root -ppassword
+CREATE USER 'monitor'@'%' IDENTIFIED BY 'password';
+GRANT USAGE, REPLICATION CLIENT ON *.* TO 'monitor'@'%';
+exit
+exit
 ```
