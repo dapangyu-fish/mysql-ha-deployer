@@ -1,5 +1,13 @@
 # mysql-ha-deployer
+- clean all
+```angular2html
+docker rm -f proxysql
+docker rm -f mysql-master
+docker rm -f mysql-slave-1
+docker rm -f mysql-slave-2
+```
 - deploy proxysql
+
 ```docker deploy proxysql
 docker run -p 16032:6032 -p 16033:6033 -p 16070:6070 -d --restart=always --name=proxysql proxysql/proxysql
 ```
@@ -10,3 +18,7 @@ docker run --restart=always --name mysql-slave-1 -e MYSQL_ROOT_PASSWORD=password
 docker run --restart=always --name mysql-slave-2 -e MYSQL_ROOT_PASSWORD=password -d mysql:latest
 ```
 
+```in proxysql
+docker exec -it proxysql bash
+mysql -u admin -padmin -h proxysql -P6032 --prompt 'ProxySQL Admin> '
+```
