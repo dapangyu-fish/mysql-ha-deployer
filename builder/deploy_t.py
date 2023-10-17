@@ -2,7 +2,7 @@ import mysql.connector
 
 db_master = mysql.connector.connect(
   host="172.88.88.3",
-  user="root",
+  user="fish",
   password="password"
 )
 
