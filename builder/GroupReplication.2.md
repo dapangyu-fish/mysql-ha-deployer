@@ -5,28 +5,18 @@ docker network create --subnet=172.88.88.0/24 ha-mysql
 ```
 - clean all
 ```clean all
-docker rm -f proxysql
 docker rm -f mysql-1
 docker rm -f mysql-2
 docker rm -f mysql-3
-docker rm -f mysql-4
-docker rm -f mysql-5
-```
-- deploy proxysql
-```docker deploy proxysql
-docker run --net ha-mysql --ip 172.88.88.102 -p 16032:6032 -p 16033:6033 -p 16070:6070 -d --restart=always --name=proxysql-g proxysql/proxysql
 ```
 
 ```docker deploy mysql
 docker run --net ha-mysql --ip 172.88.88.103 --restart=always --name mysql-1 -e MYSQL_ROOT_PASSWORD=password -d mysql:latest
 docker run --net ha-mysql --ip 172.88.88.104 --restart=always --name mysql-2 -e MYSQL_ROOT_PASSWORD=password -d mysql:latest
 docker run --net ha-mysql --ip 172.88.88.105 --restart=always --name mysql-3 -e MYSQL_ROOT_PASSWORD=password -d mysql:latest
-docker run --net ha-mysql --ip 172.88.88.106 --restart=always --name mysql-4 -e MYSQL_ROOT_PASSWORD=password -d -v /home/zhaoyihuan/mysqlMGR/mysql-4/my.cnf:/etc/my.cnf mysql:latest
-docker run --net ha-mysql --ip 172.88.88.107 --restart=always --name mysql-5 -e MYSQL_ROOT_PASSWORD=password -d -v /home/zhaoyihuan/mysqlMGR/mysql-5/my.cnf:/etc/my.cnf mysql:latest
-
 ```
 
-# https://blog.csdn.net/wzy0623/article/details/95619837
+# https://blog.51cto.com/u_15080860/6075927
 
 - mysql-1
 ```
@@ -34,14 +24,17 @@ docker exec -it mysql-1 bash
 
 mysql -u root -ppassword
 
-install plugin group_replication soname 'group_replication.so';
+SELECT   PLUGIN_NAME, PLUGIN_STATUS, PLUGIN_TYPE,   PLUGIN_LIBRARY, PLUGIN_LICENSE FROM INFORMATION_SCHEMA.PLUGINS WHERE PLUGIN_NAME LIKE 'group%' AND PLUGIN_STATUS='ACTIVE';
+install PLUGIN group_replication SONAME 'group_replication.so';
+SELECT   PLUGIN_NAME, PLUGIN_STATUS, PLUGIN_TYPE,   PLUGIN_LIBRARY, PLUGIN_LICENSE FROM INFORMATION_SCHEMA.PLUGINS WHERE PLUGIN_NAME LIKE 'group%' AND PLUGIN_STATUS='ACTIVE';
 
 exit
 
 cat <<EOF >> /etc/my.cnf
 [mysqld]
-server_id=1125
+server_id=1
 gtid_mode=ON
+enforce_gtid_consistency=ON
 enforce-gtid-consistency=true
 binlog_checksum=NONE
 innodb_buffer_pool_size=4G
@@ -62,26 +55,33 @@ group_replication_group_seeds= "172.88.88.103:33061,172.88.88.104:33061,172.88.8
 group_replication_bootstrap_group=off
 EOF
 
+# 重启mysql
+
+docker exec -it mysql-1 bash
+
+mysql -u root -ppassword
+
+
 CREATE USER 'replicate_user'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
 GRANT ALL PRIVILEGES ON *.* TO 'replicate_user'@'%';
 flush privileges;
 
-CREATE USER 'monitor'@'%' IDENTIFIED WITH mysql_native_password BY 'monitor';
-GRANT USAGE, REPLICATION CLIENT ON *.* TO 'monitor'@'%';
-CREATE USER 'fish'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
-GRANT ALL PRIVILEGES ON *.* TO 'monitor'@'%';
-CREATE USER 'stnduser'@'%' IDENTIFIED WITH mysql_native_password BY 'stnduser';
-GRANT ALL PRIVILEGES ON *.* TO 'stnduser'@'%';
 
-reset master;		
-show master status;
+--在单主节点上启动MGR集群引导
+SET GLOBAL group_replication_bootstrap_group=ON;
 
-## set slave from master-2
-stop slave;
-reset slave;
-change master to master_host='172.88.88.4',master_user='replicate_user',master_port=3306,master_password='password',master_log_file='mysql-bin.000001',master_log_pos=157;
-start slave;
-show slave status \G
+--用之前创建的用户rpl_user创建同步规则认证
+CHANGE MASTER TO MASTER_USER='replicate_user', MASTER_PASSWORD='password' FOR CHANNEL 'group_replication_recovery';
+
+-- 启动MGR
+start group_replication;
+
+-- 查看MGR集群状态
+SELECT * FROM performance_schema.replication_group_members;
+
+--在主库上关闭MGR集群引导
+SET GLOBAL group_replication_bootstrap_group=OFF;
+
 
 exit
 exit
@@ -92,16 +92,20 @@ exit
 ```
 docker exec -it mysql-2 bash
 
+
 mysql -u root -ppassword
 
-install plugin group_replication soname 'group_replication.so';
+SELECT   PLUGIN_NAME, PLUGIN_STATUS, PLUGIN_TYPE,   PLUGIN_LIBRARY, PLUGIN_LICENSE FROM INFORMATION_SCHEMA.PLUGINS WHERE PLUGIN_NAME LIKE 'group%' AND PLUGIN_STATUS='ACTIVE';
+install PLUGIN group_replication SONAME 'group_replication.so';
+SELECT   PLUGIN_NAME, PLUGIN_STATUS, PLUGIN_TYPE,   PLUGIN_LIBRARY, PLUGIN_LICENSE FROM INFORMATION_SCHEMA.PLUGINS WHERE PLUGIN_NAME LIKE 'group%' AND PLUGIN_STATUS='ACTIVE';
 
 exit
 
 cat <<EOF >> /etc/my.cnf
 [mysqld]
-server_id=1126
+server_id=2
 gtid_mode=ON
+enforce_gtid_consistency=ON
 enforce-gtid-consistency=true
 binlog_checksum=NONE
 innodb_buffer_pool_size=4G
@@ -122,24 +126,45 @@ group_replication_group_seeds= "172.88.88.103:33061,172.88.88.104:33061,172.88.8
 group_replication_bootstrap_group=off
 EOF
 
-exit
-exit
+-- 将节点host_129里接入组。
+-- Step 1：重复创建同步用户环节在从节点里创建用户并赋权。
+
+CREATE USER 'replicate_user'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
+GRANT ALL PRIVILEGES ON *.* TO 'replicate_user'@'%';
+flush privileges;
+
+-- Step 2：添加用户认证
+CHANGE REPLICATION SOURCE TO SOURCE_USER='replicate_user', SOURCE_PASSWORD='password' FOR CHANNEL 'group_replication_recovery';
+CHANGE REPLICATION SOURCE TO SOURCE_USER='replicate_user', SOURCE_PASSWORD='password' FOR CHANNEL 'group_replication_recovery';
+
+
+-- Step 3：开始group_replication组复制，使得当前节点接入组。
+START GROUP_REPLICATION;
+
+-- Step 4：当前节点上查看MGR集群 成员与状态
+SELECT * FROM performance_schema.replication_group_members;
+
+
 ```
 
 - mysql-3
 ```
 docker exec -it mysql-3 bash
 
+
 mysql -u root -ppassword
 
-install plugin group_replication soname 'group_replication.so';
+SELECT   PLUGIN_NAME, PLUGIN_STATUS, PLUGIN_TYPE,   PLUGIN_LIBRARY, PLUGIN_LICENSE FROM INFORMATION_SCHEMA.PLUGINS WHERE PLUGIN_NAME LIKE 'group%' AND PLUGIN_STATUS='ACTIVE';
+install PLUGIN group_replication SONAME 'group_replication.so';
+SELECT   PLUGIN_NAME, PLUGIN_STATUS, PLUGIN_TYPE,   PLUGIN_LIBRARY, PLUGIN_LICENSE FROM INFORMATION_SCHEMA.PLUGINS WHERE PLUGIN_NAME LIKE 'group%' AND PLUGIN_STATUS='ACTIVE';
 
 exit
 
 cat <<EOF >> /etc/my.cnf
 [mysqld]
-server_id=1127
+server_id=3
 gtid_mode=ON
+enforce_gtid_consistency=ON
 enforce-gtid-consistency=true
 binlog_checksum=NONE
 innodb_buffer_pool_size=4G
