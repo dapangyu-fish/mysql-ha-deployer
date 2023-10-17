@@ -8,8 +8,8 @@ db_proxy_admin = mysql.connector.connect(
 
 db_proxy_stnd = mysql.connector.connect(
   host="172.88.88.2",
-  user="admin",
-  password="admin"
+  user="stnduser",
+  password="stnduser"
 )
 
 db_master = mysql.connector.connect(
