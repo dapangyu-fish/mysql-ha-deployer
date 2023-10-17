@@ -8,7 +8,7 @@ db_master = mysql.connector.connect(
 
 db_slave_1 = mysql.connector.connect(
   host="172.88.88.4",
-  user="root",
+  user="fish",
   password="password"
 )
 
