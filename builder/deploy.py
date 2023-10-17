@@ -1,6 +1,12 @@
 import mysql.connector
 
-db_proxy= mysql.connector.connect(
+db_proxy_admin = mysql.connector.connect(
+  host="172.88.88.2",
+  user="admin",
+  password="admin"
+)
+
+db_proxy_stnd = mysql.connector.connect(
   host="172.88.88.2",
   user="admin",
   password="admin"
