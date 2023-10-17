@@ -44,6 +44,125 @@ SELECT * FROM mysql_servers;
 
 # https://blog.csdn.net/Charles__Yan/article/details/126939296
 
+- master-1
+```
+docker exec -it mysql-master-1 bash
+
+mysql -u root -ppassword
+
+SET GLOBAL read_only = 0;
+
+CREATE USER 'replicate_user'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
+GRANT ALL PRIVILEGES ON *.* TO 'replicate_user'@'%';
+flush privileges;
+
+CREATE USER 'monitor'@'%' IDENTIFIED WITH mysql_native_password BY 'monitor';
+GRANT USAGE, REPLICATION CLIENT ON *.* TO 'monitor'@'%';
+CREATE USER 'fish'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
+GRANT ALL PRIVILEGES ON *.* TO 'monitor'@'%';
+CREATE USER 'stnduser'@'%' IDENTIFIED WITH mysql_native_password BY 'stnduser';
+GRANT ALL PRIVILEGES ON *.* TO 'stnduser'@'%';
+
+reset master;		
+show master status;
+
+## set slave from master-2
+stop slave;
+reset slave;
+change master to master_host='172.88.88.4',master_user='replicate_user',master_port=3306,master_password='password',master_log_file='mysql-bin.000001',master_log_pos=157;
+start slave;
+show slave status \G
+
+exit
+exit
+```
+
+- master-2
+```
+docker exec -it mysql-master-2 bash
+
+mysql -u root -ppassword
+
+SET GLOBAL read_only = 0;
+
+CREATE USER 'replicate_user'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
+GRANT ALL PRIVILEGES ON *.* TO 'replicate_user'@'%';
+flush privileges;
+
+CREATE USER 'monitor'@'%' IDENTIFIED WITH mysql_native_password BY 'monitor';
+GRANT USAGE, REPLICATION CLIENT ON *.* TO 'monitor'@'%';
+CREATE USER 'fish'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
+GRANT ALL PRIVILEGES ON *.* TO 'monitor'@'%';
+CREATE USER 'stnduser'@'%' IDENTIFIED WITH mysql_native_password BY 'stnduser';
+GRANT ALL PRIVILEGES ON *.* TO 'stnduser'@'%';
+
+reset master;		
+show master status;
+
+## set slave from master-1
+stop slave;
+reset slave;
+change master to master_host='172.88.88.3',master_user='replicate_user',master_port=3306,master_password='password',master_log_file='mysql-bin.000001',master_log_pos=157;
+start slave;
+show slave status \G
+
+exit
+exit
+```
+
+- slave-1
+```
+docker exec -it mysql-slave-1 bash
+
+mysql -u root -ppassword
+
+CREATE USER 'monitor'@'%' IDENTIFIED WITH mysql_native_password BY 'monitor';
+GRANT USAGE, REPLICATION CLIENT ON *.* TO 'monitor'@'%';
+CREATE USER 'fish'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
+GRANT ALL PRIVILEGES ON *.* TO 'monitor'@'%';
+CREATE USER 'stnduser'@'%' IDENTIFIED WITH mysql_native_password BY 'stnduser';
+GRANT ALL PRIVILEGES ON *.* TO 'stnduser'@'%';
+
+stop slave;
+reset slave;
+change master to master_host='172.88.88.3',master_user='replicate_user',master_port=3306,master_password='password',master_log_file='mysql-bin.000001',master_log_pos=157;
+start slave;
+show slave status \G
+SET GLOBAL read_only = 1;
+set global super_read_only=1;
+show global variables like '%read_only%';
+
+exit
+exit
+```
+
+- slave-2
+```
+docker exec -it mysql-slave-2 bash
+
+mysql -u root -ppassword
+
+CREATE USER 'monitor'@'%' IDENTIFIED WITH mysql_native_password BY 'monitor';
+GRANT USAGE, REPLICATION CLIENT ON *.* TO 'monitor'@'%';
+CREATE USER 'fish'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
+GRANT ALL PRIVILEGES ON *.* TO 'monitor'@'%';
+CREATE USER 'stnduser'@'%' IDENTIFIED WITH mysql_native_password BY 'stnduser';
+GRANT ALL PRIVILEGES ON *.* TO 'stnduser'@'%';
+
+stop slave;
+reset slave;
+change master to master_host='172.88.88.4',master_user='replicate_user',master_port=3306,master_password='password',master_log_file='mysql-bin.000001',master_log_pos=157;
+start slave;
+show slave status \G
+SET GLOBAL read_only = 1;
+set global super_read_only=1;
+show global variables like '%read_only%';
+
+exit
+exit
+```
+
+
 ```in mysql
 docker exec -it mysql-master-1 bash
 
@@ -102,6 +221,16 @@ CREATE USER 'fish'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
 GRANT ALL PRIVILEGES ON *.* TO 'monitor'@'%';
 CREATE USER 'stnduser'@'%' IDENTIFIED WITH mysql_native_password BY 'stnduser';
 GRANT ALL PRIVILEGES ON *.* TO 'stnduser'@'%';
+
+stop slave;
+reset slave;
+change master to master_host='172.88.88.4',master_user='replicate_user',master_port=3306,master_password='password',master_log_file='mysql-bin.000001',master_log_pos=157;
+start slave;
+show slave status \G
+SET GLOBAL read_only = 1;
+set global super_read_only=1;
+show global variables like '%read_only%';
+
 exit
 exit
 
