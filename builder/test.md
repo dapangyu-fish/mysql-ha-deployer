@@ -6,7 +6,8 @@ docker network create --subnet=172.88.88.0/24 ha-mysql
 - clean all
 ```clean all
 docker rm -f proxysql
-docker rm -f mysql-master
+docker rm -f mysql-master-1
+docker rm -f mysql-master-2
 docker rm -f mysql-slave-1
 docker rm -f mysql-slave-2
 ```
@@ -16,9 +17,10 @@ docker run --net ha-mysql --ip 172.88.88.2 -p 16032:6032 -p 16033:6033 -p 16070:
 ```
 
 ```docker deploy mysql
-docker run --net ha-mysql --ip 172.88.88.3 --restart=always --name mysql-master -e MYSQL_ROOT_PASSWORD=password -d -v /home/zhaoyihuan/mysql/master/my.cnf:/etc/my.cnf mysql:latest
-docker run --net ha-mysql --ip 172.88.88.4 --restart=always --name mysql-slave-1 -e MYSQL_ROOT_PASSWORD=password -d -v /home/zhaoyihuan/mysql/slave-1/my.cnf:/etc/my.cnf mysql:latest
-docker run --net ha-mysql --ip 172.88.88.5 --restart=always --name mysql-slave-2 -e MYSQL_ROOT_PASSWORD=password -d -v /home/zhaoyihuan/mysql/slave-2/my.cnf:/etc/my.cnf mysql:latest
+docker run --net ha-mysql --ip 172.88.88.3 --restart=always --name mysql-master-1 -e MYSQL_ROOT_PASSWORD=password -d -v /home/zhaoyihuan/mysql/master-1/my.cnf:/etc/my.cnf mysql:latest
+docker run --net ha-mysql --ip 172.88.88.4 --restart=always --name mysql-master-2 -e MYSQL_ROOT_PASSWORD=password -d -v /home/zhaoyihuan/mysql/master-2/my.cnf:/etc/my.cnf mysql:latest
+docker run --net ha-mysql --ip 172.88.88.13 --restart=always --name mysql-slave-1 -e MYSQL_ROOT_PASSWORD=password -d -v /home/zhaoyihuan/mysql/slave-1/my.cnf:/etc/my.cnf mysql:latest
+docker run --net ha-mysql --ip 172.88.88.14 --restart=always --name mysql-slave-2 -e MYSQL_ROOT_PASSWORD=password -d -v /home/zhaoyihuan/mysql/slave-2/my.cnf:/etc/my.cnf mysql:latest
 ```
 
 ```in proxysql
@@ -32,7 +34,8 @@ SELECT * from mysql_query_rules;
 
 INSERT INTO mysql_servers(hostgroup_id,hostname,port) VALUES (1,'172.88.88.3',3306);
 INSERT INTO mysql_servers(hostgroup_id,hostname,port) VALUES (1,'172.88.88.4',3306);
-INSERT INTO mysql_servers(hostgroup_id,hostname,port) VALUES (1,'172.88.88.5',3306);
+INSERT INTO mysql_servers(hostgroup_id,hostname,port) VALUES (1,'172.88.88.13',3306);
+INSERT INTO mysql_servers(hostgroup_id,hostname,port) VALUES (1,'172.88.88.14',3306);
 SELECT * FROM mysql_servers;
 LOAD MYSQL VARIABLES TO RUNTIME;
 SAVE MYSQL VARIABLES TO DISK;
@@ -42,7 +45,7 @@ SELECT * FROM mysql_servers;
 # https://blog.csdn.net/Charles__Yan/article/details/126939296
 
 ```in mysql
-docker exec -it mysql-master bash
+docker exec -it mysql-master-1 bash
 
 mysql -u root -ppassword
 
@@ -126,7 +129,7 @@ LOAD MYSQL SERVERS TO RUNTIME;
 SAVE MYSQL VARIABLES TO DISK;
 SELECT * FROM monitor.mysql_server_read_only_log ORDER BY time_start_us DESC LIMIT 3;
 
-UPDATE mysql_servers SET hostgroup_id = 2 WHERE hostname IN ('172.88.88.4', '172.88.88.5');
+UPDATE mysql_servers SET hostgroup_id = 2 WHERE hostname IN ('172.88.88.13', '172.88.88.14');
 
 SELECT * FROM mysql_servers;
 
