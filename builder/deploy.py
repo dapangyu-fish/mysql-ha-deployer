@@ -1,5 +1,11 @@
 import mysql.connector
 
+db_proxy= mysql.connector.connect(
+  host="172.88.88.2",
+  user="admin",
+  password="admin"
+)
+
 db_master = mysql.connector.connect(
   host="172.88.88.3",
   user="root",
