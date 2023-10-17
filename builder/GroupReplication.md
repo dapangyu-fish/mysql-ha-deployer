@@ -18,42 +18,49 @@ docker run --net ha-mysql --ip 172.88.88.102 -p 16032:6032 -p 16033:6033 -p 1607
 ```
 
 ```docker deploy mysql
-docker run --net ha-mysql --ip 172.88.88.103 --restart=always --name mysql-1 -e MYSQL_ROOT_PASSWORD=password -d -v /home/zhaoyihuan/mysqlMGR/mysql-1/my.cnf:/etc/my.cnf mysql:latest
-docker run --net ha-mysql --ip 172.88.88.104 --restart=always --name mysql-2 -e MYSQL_ROOT_PASSWORD=password -d -v /home/zhaoyihuan/mysqlMGR/mysql-1/my.cnf:/etc/my.cnf mysql:latest
-docker run --net ha-mysql --ip 172.88.88.105 --restart=always --name mysql-3 -e MYSQL_ROOT_PASSWORD=password -d -v /home/zhaoyihuan/mysqlMGR/mysql-3/my.cnf:/etc/my.cnf mysql:latest
+docker run --net ha-mysql --ip 172.88.88.103 --restart=always --name mysql-1 -e MYSQL_ROOT_PASSWORD=password -d mysql:latest
+docker run --net ha-mysql --ip 172.88.88.104 --restart=always --name mysql-2 -e MYSQL_ROOT_PASSWORD=password -d mysql:latest
+docker run --net ha-mysql --ip 172.88.88.105 --restart=always --name mysql-3 -e MYSQL_ROOT_PASSWORD=password -d mysql:latest
 docker run --net ha-mysql --ip 172.88.88.106 --restart=always --name mysql-4 -e MYSQL_ROOT_PASSWORD=password -d -v /home/zhaoyihuan/mysqlMGR/mysql-4/my.cnf:/etc/my.cnf mysql:latest
 docker run --net ha-mysql --ip 172.88.88.107 --restart=always --name mysql-5 -e MYSQL_ROOT_PASSWORD=password -d -v /home/zhaoyihuan/mysqlMGR/mysql-5/my.cnf:/etc/my.cnf mysql:latest
 
 ```
 
-```in proxysql
-docker exec -it proxysql bash
+# https://blog.csdn.net/wzy0623/article/details/95619837
 
-mysql -u admin -padmin -h 127.0.0.1 -P6032 --default-auth=mysql_native_password --prompt 'ProxySQL Admin> '
-
-SELECT * FROM mysql_servers;
-SELECT * from mysql_replication_hostgroups;
-SELECT * from mysql_query_rules;
-
-INSERT INTO mysql_servers(hostgroup_id,hostname,port) VALUES (1,'172.88.88.3',3306);
-INSERT INTO mysql_servers(hostgroup_id,hostname,port) VALUES (1,'172.88.88.4',3306);
-INSERT INTO mysql_servers(hostgroup_id,hostname,port) VALUES (1,'172.88.88.13',3306);
-INSERT INTO mysql_servers(hostgroup_id,hostname,port) VALUES (1,'172.88.88.14',3306);
-SELECT * FROM mysql_servers;
-LOAD MYSQL VARIABLES TO RUNTIME;
-SAVE MYSQL VARIABLES TO DISK;
-SELECT * FROM mysql_servers;
+- mysql-1
 ```
-
-# https://blog.csdn.net/Charles__Yan/article/details/126939296
-
-- master-1
-```
-docker exec -it mysql-master-1 bash
+docker exec -it mysql-1 bash
 
 mysql -u root -ppassword
 
-SET GLOBAL read_only = 0;
+install plugin group_replication soname 'group_replication.so';
+
+exit
+
+cat <<EOF >> /etc/my.cnf
+[mysqld]
+server_id=1125
+gtid_mode=ON
+enforce-gtid-consistency=true
+binlog_checksum=NONE
+innodb_buffer_pool_size=4G
+ 
+disabled_storage_engines="MyISAM,BLACKHOLE,FEDERATED,ARCHIVE,MEMORY"
+ 
+log_bin=binlog
+log_slave_updates=ON
+binlog_format=ROW
+master_info_repository=TABLE
+relay_log_info_repository=TABLE
+ 
+transaction_write_set_extraction=XXHASH64
+group_replication_group_name="3955DFE7-55C4-52B5-2283-1A90677C78B9"
+group_replication_start_on_boot=off
+group_replication_local_address= "172.88.88.103:33061"
+group_replication_group_seeds= "172.88.88.103:33061,172.88.88.104:33061,172.88.88.105:33061"
+group_replication_bootstrap_group=off
+EOF
 
 CREATE USER 'replicate_user'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
 GRANT ALL PRIVILEGES ON *.* TO 'replicate_user'@'%';
@@ -78,6 +85,86 @@ show slave status \G
 
 exit
 exit
+```
+
+
+- mysql-2
+```
+docker exec -it mysql-2 bash
+
+mysql -u root -ppassword
+
+install plugin group_replication soname 'group_replication.so';
+
+exit
+
+cat <<EOF >> /etc/my.cnf
+[mysqld]
+server_id=1126
+gtid_mode=ON
+enforce-gtid-consistency=true
+binlog_checksum=NONE
+innodb_buffer_pool_size=4G
+ 
+disabled_storage_engines="MyISAM,BLACKHOLE,FEDERATED,ARCHIVE,MEMORY"
+ 
+log_bin=binlog
+log_slave_updates=ON
+binlog_format=ROW
+master_info_repository=TABLE
+relay_log_info_repository=TABLE
+ 
+transaction_write_set_extraction=XXHASH64
+group_replication_group_name="3955DFE7-55C4-52B5-2283-1A90677C78B9"
+group_replication_start_on_boot=off
+group_replication_local_address= "172.88.88.104:33061"
+group_replication_group_seeds= "172.88.88.103:33061,172.88.88.104:33061,172.88.88.105:33061"
+group_replication_bootstrap_group=off
+EOF
+
+exit
+exit
+```
+
+- mysql-3
+```
+docker exec -it mysql-3 bash
+
+mysql -u root -ppassword
+
+install plugin group_replication soname 'group_replication.so';
+
+exit
+
+cat <<EOF >> /etc/my.cnf
+[mysqld]
+server_id=1127
+gtid_mode=ON
+enforce-gtid-consistency=true
+binlog_checksum=NONE
+innodb_buffer_pool_size=4G
+ 
+disabled_storage_engines="MyISAM,BLACKHOLE,FEDERATED,ARCHIVE,MEMORY"
+ 
+log_bin=binlog
+log_slave_updates=ON
+binlog_format=ROW
+master_info_repository=TABLE
+relay_log_info_repository=TABLE
+ 
+transaction_write_set_extraction=XXHASH64
+group_replication_group_name="3955DFE7-55C4-52B5-2283-1A90677C78B9"
+group_replication_start_on_boot=off
+group_replication_local_address= "172.88.88.105:33061"
+group_replication_group_seeds= "172.88.88.103:33061,172.88.88.104:33061,172.88.88.105:33061"
+group_replication_bootstrap_group=off
+EOF
+
+exit
+exit
+
+mysqladmin -uroot -ppassword shutdown
+mysqld_safe --defaults-file=/etc/my.cnf &
 ```
 
 - master-2
