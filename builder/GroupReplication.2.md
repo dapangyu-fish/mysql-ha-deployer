@@ -5,22 +5,23 @@ docker network create --subnet=172.88.88.0/24 ha-mysql
 ```
 - clean all
 ```clean all
-docker rm -f mysql-1
-docker rm -f mysql-2
-docker rm -f mysql-3
+
+
+docker rm -f mysql1
+docker rm -f mysql2
+docker rm -f mysql3
+docker run --hostname mysql1 --net ha-mysql --ip 172.88.88.103 --restart=always --name mysql1 -e MYSQL_ROOT_PASSWORD=password -d --add-host=mysql1:172.88.88.103 --add-host=mysql2:172.88.88.104 --add-host=mysql3:172.88.88.105 mysql:8.0.23
+docker run --hostname mysql2 --net ha-mysql --ip 172.88.88.104 --restart=always --name mysql2 -e MYSQL_ROOT_PASSWORD=password -d --add-host=mysql1:172.88.88.103 --add-host=mysql2:172.88.88.104 --add-host=mysql3:172.88.88.105 mysql:8.0.23
+docker run --hostname mysql3 --net ha-mysql --ip 172.88.88.105 --restart=always --name mysql3 -e MYSQL_ROOT_PASSWORD=password -d --add-host=mysql1:172.88.88.103 --add-host=mysql2:172.88.88.104 --add-host=mysql3:172.88.88.105 mysql:8.0.23
+
 ```
 
-```docker deploy mysql
-docker run --net ha-mysql --ip 172.88.88.103 --restart=always --name mysql-1 -e MYSQL_ROOT_PASSWORD=password -d mysql:latest
-docker run --net ha-mysql --ip 172.88.88.104 --restart=always --name mysql-2 -e MYSQL_ROOT_PASSWORD=password -d mysql:latest
-docker run --net ha-mysql --ip 172.88.88.105 --restart=always --name mysql-3 -e MYSQL_ROOT_PASSWORD=password -d mysql:latest
-```
 
 # https://blog.51cto.com/u_15080860/6075927
 
 - mysql-1
 ```
-docker exec -it mysql-1 bash
+docker exec -it mysql1 bash
 
 mysql -u root -ppassword
 
@@ -32,22 +33,18 @@ exit
 
 cat <<EOF >> /etc/my.cnf
 [mysqld]
-server_id=1
+disabled_storage_engines="MyISAM,BLACKHOLE,FEDERATED,ARCHIVE,MEMORY"
+server_id=1 #其它节点相应修改，不能重复
 gtid_mode=ON
 enforce_gtid_consistency=ON
-enforce-gtid-consistency=true
 binlog_checksum=NONE
-innodb_buffer_pool_size=4G
- 
-disabled_storage_engines="MyISAM,BLACKHOLE,FEDERATED,ARCHIVE,MEMORY"
- 
 log_bin=binlog
 log_slave_updates=ON
 binlog_format=ROW
 master_info_repository=TABLE
 relay_log_info_repository=TABLE
- 
 transaction_write_set_extraction=XXHASH64
+plugin_load_add='group_replication.so'
 group_replication_group_name="3955DFE7-55C4-52B5-2283-1A90677C78B9"
 group_replication_start_on_boot=off
 group_replication_local_address= "172.88.88.103:33061"
@@ -57,36 +54,30 @@ EOF
 
 # 重启mysql
 
-docker exec -it mysql-1 bash
+docker exec -it mysql1 bash
 
 mysql -u root -ppassword
 
 SET SQL_LOG_BIN=0;
-create user rpl_user@'%' identified by 'Rpl_user123';
+create user rpl_user@'%' identified with mysql_native_password by 'Rpl_user123';
 GRANT REPLICATION SLAVE ON *.* TO rpl_user@'%';
 GRANT BACKUP_ADMIN ON *.* TO rpl_user@'%';
 FLUSH PRIVILEGES;
 SET SQL_LOG_BIN=1;
 
 
-CREATE USER 'replicate_user'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
-GRANT ALL PRIVILEGES ON *.* TO 'replicate_user'@'%';
-flush privileges;
-
-
---在单主节点上启动MGR集群引导
 SET GLOBAL group_replication_bootstrap_group=ON;
 
---用之前创建的用户rpl_user创建同步规则认证
-CHANGE MASTER TO MASTER_USER='replicate_user', MASTER_PASSWORD='password' FOR CHANNEL 'group_replication_recovery';
+set global group_replication_ip_allowlist="172.88.88.103,172.88.88.104,172.88.88.105";
+CHANGE MASTER TO MASTER_USER='rpl_user', MASTER_PASSWORD='Rpl_user123' FOR CHANNEL 'group_replication_recovery';
 
--- 启动MGR
+
 start group_replication;
 
--- 查看MGR集群状态
+
 SELECT * FROM performance_schema.replication_group_members;
 
---在主库上关闭MGR集群引导
+
 SET GLOBAL group_replication_bootstrap_group=OFF;
 
 
@@ -94,10 +85,16 @@ exit
 exit
 ```
 
+```angular2html
+echo "172.88.88.103	mysql1">>/etc/hosts
+echo "172.88.88.104	mysql2">>/etc/hosts
+echo "172.88.88.105	mysql3">>/etc/hosts
+```
+
 
 - mysql-2
 ```
-docker exec -it mysql-2 bash
+docker exec -it mysql2 bash
 
 
 mysql -u root -ppassword
@@ -111,22 +108,18 @@ exit
 
 cat <<EOF >> /etc/my.cnf
 [mysqld]
-server_id=2
+disabled_storage_engines="MyISAM,BLACKHOLE,FEDERATED,ARCHIVE,MEMORY"
+server_id=2 #其它节点相应修改，不能重复
 gtid_mode=ON
 enforce_gtid_consistency=ON
-enforce-gtid-consistency=true
 binlog_checksum=NONE
-innodb_buffer_pool_size=4G
- 
-disabled_storage_engines="MyISAM,BLACKHOLE,FEDERATED,ARCHIVE,MEMORY"
- 
 log_bin=binlog
 log_slave_updates=ON
 binlog_format=ROW
 master_info_repository=TABLE
 relay_log_info_repository=TABLE
- 
 transaction_write_set_extraction=XXHASH64
+plugin_load_add='group_replication.so'
 group_replication_group_name="3955DFE7-55C4-52B5-2283-1A90677C78B9"
 group_replication_start_on_boot=off
 group_replication_local_address= "172.88.88.104:33061"
@@ -134,35 +127,26 @@ group_replication_group_seeds= "172.88.88.103:33061,172.88.88.104:33061,172.88.8
 group_replication_bootstrap_group=off
 EOF
 
+
+docker exec -it mysql2 bash
+
+
+mysql -u root -ppassword
+
 -- 将节点host_129里接入组。
 -- Step 1：重复创建同步用户环节在从节点里创建用户并赋权。
 
 SET SQL_LOG_BIN=0;
-create user rpl_user@'%' identified by 'Rpl_user123';
+create user rpl_user@'%' identified with mysql_native_password by 'Rpl_user123';
 GRANT REPLICATION SLAVE ON *.* TO rpl_user@'%';
 GRANT BACKUP_ADMIN ON *.* TO rpl_user@'%';
 FLUSH PRIVILEGES;
 SET SQL_LOG_BIN=1;
 
-SET SQL_LOG_BIN=0;
-CREATE USER 'replicate_user'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
-GRANT ALL PRIVILEGES ON *.* TO 'replicate_user'@'%';
-GRANT REPLICATION SLAVE ON *.* TO replicate_user@'%';
-GRANT BACKUP_ADMIN ON *.* TO replicate_user@'%';
-flush privileges;
-SET SQL_LOG_BIN=1;
+set global group_replication_ip_allowlist="172.88.88.103,172.88.88.104,172.88.88.105";
+CHANGE MASTER TO MASTER_USER='rpl_user', MASTER_PASSWORD='Rpl_user123' FOR CHANNEL 'group_replication_recovery';
 
-
-
--- Step 2：添加用户认证
-CHANGE REPLICATION SOURCE TO SOURCE_USER='replicate_user', SOURCE_PASSWORD='password' FOR CHANNEL 'group_replication_recovery';
-CHANGE REPLICATION SOURCE TO SOURCE_USER='replicate_user', SOURCE_PASSWORD='password' FOR CHANNEL 'group_replication_recovery';
-
-
--- Step 3：开始group_replication组复制，使得当前节点接入组。
-SET GLOBAL group_replication_bootstrap_group = ON;
 START GROUP_REPLICATION;
-SET GLOBAL group_replication_bootstrap_group = OFF;
 
 -- Step 4：当前节点上查看MGR集群 成员与状态
 SELECT * FROM performance_schema.replication_group_members;
