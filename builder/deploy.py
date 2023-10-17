@@ -2,20 +2,20 @@ import mysql.connector
 
 db_master = mysql.connector.connect(
   host="172.88.88.3",
-  user="stnduser",
-  password="stnduser"
+  user="root",
+  password="password"
 )
 
 db_slave_1 = mysql.connector.connect(
   host="172.88.88.4",
-  user="stnduser",
-  password="stnduser"
+  user="root",
+  password="password"
 )
 
 db_slave_2 = mysql.connector.connect(
   host="172.88.88.5",
-  user="stnduser",
-  password="stnduser"
+  user="root",
+  password="password"
 )
 
 print(db_master)
