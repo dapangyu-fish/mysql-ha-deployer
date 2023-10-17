@@ -61,6 +61,13 @@ docker exec -it mysql-1 bash
 
 mysql -u root -ppassword
 
+SET SQL_LOG_BIN=0;
+create user rpl_user@'%' identified by 'Rpl_user123';
+GRANT REPLICATION SLAVE ON *.* TO rpl_user@'%';
+GRANT BACKUP_ADMIN ON *.* TO rpl_user@'%';
+FLUSH PRIVILEGES;
+SET SQL_LOG_BIN=1;
+
 
 CREATE USER 'replicate_user'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
 GRANT ALL PRIVILEGES ON *.* TO 'replicate_user'@'%';
@@ -101,6 +108,7 @@ SELECT   PLUGIN_NAME, PLUGIN_STATUS, PLUGIN_TYPE,   PLUGIN_LIBRARY, PLUGIN_LICEN
 
 exit
 
+
 cat <<EOF >> /etc/my.cnf
 [mysqld]
 server_id=2
@@ -129,9 +137,22 @@ EOF
 -- 将节点host_129里接入组。
 -- Step 1：重复创建同步用户环节在从节点里创建用户并赋权。
 
+SET SQL_LOG_BIN=0;
+create user rpl_user@'%' identified by 'Rpl_user123';
+GRANT REPLICATION SLAVE ON *.* TO rpl_user@'%';
+GRANT BACKUP_ADMIN ON *.* TO rpl_user@'%';
+FLUSH PRIVILEGES;
+SET SQL_LOG_BIN=1;
+
+SET SQL_LOG_BIN=0;
 CREATE USER 'replicate_user'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
 GRANT ALL PRIVILEGES ON *.* TO 'replicate_user'@'%';
+GRANT REPLICATION SLAVE ON *.* TO replicate_user@'%';
+GRANT BACKUP_ADMIN ON *.* TO replicate_user@'%';
 flush privileges;
+SET SQL_LOG_BIN=1;
+
+
 
 -- Step 2：添加用户认证
 CHANGE REPLICATION SOURCE TO SOURCE_USER='replicate_user', SOURCE_PASSWORD='password' FOR CHANNEL 'group_replication_recovery';
@@ -139,7 +160,9 @@ CHANGE REPLICATION SOURCE TO SOURCE_USER='replicate_user', SOURCE_PASSWORD='pass
 
 
 -- Step 3：开始group_replication组复制，使得当前节点接入组。
+SET GLOBAL group_replication_bootstrap_group = ON;
 START GROUP_REPLICATION;
+SET GLOBAL group_replication_bootstrap_group = OFF;
 
 -- Step 4：当前节点上查看MGR集群 成员与状态
 SELECT * FROM performance_schema.replication_group_members;
