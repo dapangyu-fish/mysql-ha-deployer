@@ -10,9 +10,9 @@ docker network create --subnet=172.88.88.0/24 ha-mysql
 docker rm -f mysql1
 docker rm -f mysql2
 docker rm -f mysql3
-docker run --hostname mysql1 --net ha-mysql --ip 172.88.88.103 --restart=always --name mysql1 -e MYSQL_ROOT_PASSWORD=password -d --add-host=mysql1:172.88.88.103 --add-host=mysql2:172.88.88.104 --add-host=mysql3:172.88.88.105 mysql:8.0.23
-docker run --hostname mysql2 --net ha-mysql --ip 172.88.88.104 --restart=always --name mysql2 -e MYSQL_ROOT_PASSWORD=password -d --add-host=mysql1:172.88.88.103 --add-host=mysql2:172.88.88.104 --add-host=mysql3:172.88.88.105 mysql:8.0.23
-docker run --hostname mysql3 --net ha-mysql --ip 172.88.88.105 --restart=always --name mysql3 -e MYSQL_ROOT_PASSWORD=password -d --add-host=mysql1:172.88.88.103 --add-host=mysql2:172.88.88.104 --add-host=mysql3:172.88.88.105 mysql:8.0.23
+docker run --hostname mysql1 --net ha-mysql --ip 172.88.88.103 --restart=always --name mysql1 -e MYSQL_ROOT_PASSWORD=password -d --add-host=mysql1:172.88.88.103 --add-host=mysql2:172.88.88.104 --add-host=mysql3:172.88.88.105 mysql:latest
+docker run --hostname mysql2 --net ha-mysql --ip 172.88.88.104 --restart=always --name mysql2 -e MYSQL_ROOT_PASSWORD=password -d --add-host=mysql1:172.88.88.103 --add-host=mysql2:172.88.88.104 --add-host=mysql3:172.88.88.105 mysql:latest
+docker run --hostname mysql3 --net ha-mysql --ip 172.88.88.105 --restart=always --name mysql3 -e MYSQL_ROOT_PASSWORD=password -d --add-host=mysql1:172.88.88.103 --add-host=mysql2:172.88.88.104 --add-host=mysql3:172.88.88.105 mysql:latest
 
 ```
 
@@ -84,13 +84,6 @@ SET GLOBAL group_replication_bootstrap_group=OFF;
 exit
 exit
 ```
-
-```angular2html
-echo "172.88.88.103	mysql1">>/etc/hosts
-echo "172.88.88.104	mysql2">>/etc/hosts
-echo "172.88.88.105	mysql3">>/etc/hosts
-```
-
 
 - mysql2
 ```
