@@ -349,5 +349,15 @@ select * from user;
 DROP TABLE user;
 DROP DATABASE fish1;
 
-
+docker exec -it mysql1 bash -c "sed -i 's/group_replication_start_on_boot=off/group_replication_start_on_boot=on/' /etc/my.cnf"
+docker exec -it mysql2 bash -c "sed -i 's/group_replication_start_on_boot=off/group_replication_start_on_boot=on/' /etc/my.cnf"
+docker exec -it mysql3 bash -c "sed -i 's/group_replication_start_on_boot=off/group_replication_start_on_boot=on/' /etc/my.cnf"
+docker exec -it mysql4 bash -c "sed -i 's/group_replication_start_on_boot=off/group_replication_start_on_boot=on/' /etc/my.cnf"
+docker exec -it mysql5 bash -c "sed -i 's/group_replication_start_on_boot=off/group_replication_start_on_boot=on/' /etc/my.cnf"
+docker restart mysql5
+docker restart mysql4
+docker restart mysql3
+docker restart mysql2
+docker restart mysql1
 ```
+
