@@ -6,7 +6,7 @@ docker network create --subnet=172.88.88.0/24 ha-mysql
 - clean all
 ```clean all
 
-
+docker rm -f proxysql
 docker rm -f mysql1
 docker rm -f mysql2
 docker rm -f mysql3
@@ -55,6 +55,7 @@ group_replication_local_address= "172.88.88.103:33061"
 group_replication_group_seeds= "172.88.88.103:33061,172.88.88.104:33061,172.88.88.105:33061"
 group_replication_ip_allowlist="172.88.88.103,172.88.88.104,172.88.88.105,172.88.88.106,172.88.88.107"
 group_replication_bootstrap_group=off
+max_connections=500
 EOF
 
 # 重启mysql
@@ -124,6 +125,7 @@ group_replication_local_address= "172.88.88.104:33061"
 group_replication_group_seeds= "172.88.88.103:33061,172.88.88.104:33061,172.88.88.105:33061,172.88.88.106:33061,172.88.88.107:33061"
 group_replication_ip_allowlist="172.88.88.103,172.88.88.104,172.88.88.105,172.88.88.106,172.88.88.107"
 group_replication_bootstrap_group=off
+max_connections=500
 EOF
 
 # 重启mysql
@@ -185,6 +187,7 @@ group_replication_local_address= "172.88.88.105:33061"
 group_replication_group_seeds= "172.88.88.103:33061,172.88.88.104:33061,172.88.88.105:33061,172.88.88.106:33061,172.88.88.107:33061"
 group_replication_ip_allowlist="172.88.88.103,172.88.88.104,172.88.88.105,172.88.88.106,172.88.88.107"
 group_replication_bootstrap_group=off
+max_connections=500
 EOF
 
 # 重启mysql
@@ -247,6 +250,7 @@ group_replication_local_address= "172.88.88.106:33061"
 group_replication_group_seeds= "172.88.88.103:33061,172.88.88.104:33061,172.88.88.105:33061,172.88.88.106:33061,172.88.88.107:33061"
 group_replication_ip_allowlist="172.88.88.103,172.88.88.104,172.88.88.105,172.88.88.106,172.88.88.107"
 group_replication_bootstrap_group=off
+max_connections=500
 EOF
 
 # 重启mysql
@@ -308,6 +312,7 @@ group_replication_local_address= "172.88.88.107:33061"
 group_replication_group_seeds= "172.88.88.103:33061,172.88.88.104:33061,172.88.88.105:33061,172.88.88.106:33061,172.88.88.107:33061"
 group_replication_ip_allowlist="172.88.88.103,172.88.88.104,172.88.88.105,172.88.88.106,172.88.88.107"
 group_replication_bootstrap_group=off
+max_connections=500
 EOF
 
 # 重启mysql
@@ -369,4 +374,104 @@ SELECT group_replication_switch_to_multi_primary_mode()
 # 多主切换到单主
 ```
 SELECT group_replication_switch_to_single_primary_mode(‘7edd8b92-b077-11eb-8ffe-000c2936760d’);
+```
+
+```angular2html
+docker run --net ha-mysql --ip 172.88.88.100 -p 16032:6032 -p 16033:6033 -p 16070:6070 -d --restart=always --name=proxysql proxysql/proxysql
+
+docker exec -it proxysql bash
+
+mysql -u admin -padmin -h 127.0.0.1 -P6032 --default-auth=mysql_native_password --prompt 'ProxySQL Admin> '
+
+SELECT * FROM mysql_servers;
+SELECT * from mysql_replication_hostgroups;
+SELECT * from mysql_query_rules;
+
+INSERT INTO mysql_servers(hostgroup_id,hostname,port) VALUES (1,'172.88.88.103',3306);
+INSERT INTO mysql_servers(hostgroup_id,hostname,port) VALUES (1,'172.88.88.104',3306);
+INSERT INTO mysql_servers(hostgroup_id,hostname,port) VALUES (1,'172.88.88.105',3306);
+INSERT INTO mysql_servers(hostgroup_id,hostname,port) VALUES (1,'172.88.88.106',3306);
+INSERT INTO mysql_servers(hostgroup_id,hostname,port) VALUES (1,'172.88.88.107',3306);
+
+SELECT * FROM mysql_servers;
+LOAD MYSQL VARIABLES TO RUNTIME;
+SAVE MYSQL VARIABLES TO DISK;
+SELECT * FROM mysql_servers;
+
+# 真实数据库操作
+
+CREATE USER 'monitor'@'%' IDENTIFIED WITH mysql_native_password BY 'monitor';
+GRANT USAGE, REPLICATION CLIENT ON *.* TO 'monitor'@'%';
+GRANT ALL PRIVILEGES ON *.* TO 'monitor'@'%';
+
+CREATE USER 'fish'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
+GRANT ALL PRIVILEGES ON *.* TO 'fish'@'%';
+
+docker exec -it proxysql bash
+mysql -u admin -padmin -h 127.0.0.1 -P6032 --default-auth=mysql_native_password --prompt 'ProxySQL Admin> '
+UPDATE global_variables SET variable_value='monitor' WHERE variable_name='mysql-monitor_username';
+UPDATE global_variables SET variable_value='monitor' WHERE variable_name='mysql-monitor_password';
+UPDATE global_variables SET variable_value='2000' WHERE variable_name IN ('mysql-monitor_connect_interval','mysql-monitor_ping_interval','mysql-monitor_read_only_interval');
+SELECT * FROM global_variables WHERE variable_name LIKE 'mysql-monitor_%';
+
+
+LOAD MYSQL USERS TO RUNTIME;
+SAVE MYSQL USERS TO DISK;
+LOAD MYSQL SERVERS TO RUNTIME;
+SAVE MYSQL SERVERS TO DISK;
+LOAD MYSQL QUERY RULES TO RUNTIME;
+SAVE MYSQL QUERY RULES TO DISK;
+LOAD MYSQL VARIABLES TO RUNTIME;
+SAVE MYSQL VARIABLES TO DISK;
+LOAD ADMIN VARIABLES TO RUNTIME;
+SAVE ADMIN VARIABLES TO DISK;
+
+SHOW TABLES FROM monitor;
+SELECT * FROM monitor.mysql_server_connect_log ORDER BY time_start_us DESC LIMIT 3;
+
+
+SHOW CREATE TABLE mysql_replication_hostgroups\G
+INSERT INTO mysql_replication_hostgroups (writer_hostgroup,reader_hostgroup,comment) VALUES (1,2,'cluster1');
+LOAD MYSQL SERVERS TO RUNTIME;
+SAVE MYSQL VARIABLES TO DISK;
+SELECT * FROM monitor.mysql_server_read_only_log ORDER BY time_start_us DESC LIMIT 3;
+
+<!--UPDATE mysql_servers SET hostgroup_id = 2 WHERE hostname IN ('172.88.88.13', '172.88.88.14');-->
+
+SELECT * FROM mysql_servers;
+
+
+
+SHOW CREATE TABLE mysql_users\G
+
+INSERT INTO mysql_users(username,password,default_hostgroup) VALUES ('root','password',1);
+INSERT INTO mysql_users(username,password,default_hostgroup) VALUES ('fish','password',1);
+
+
+LOAD MYSQL VARIABLES TO RUNTIME;
+SAVE MYSQL VARIABLES TO DISK;
+
+SELECT * FROM mysql_users;
+
+LOAD MYSQL USERS TO RUNTIME;
+SAVE MYSQL USERS TO DISK;
+LOAD MYSQL SERVERS TO RUNTIME;
+SAVE MYSQL SERVERS TO DISK;
+LOAD MYSQL QUERY RULES TO RUNTIME;
+SAVE MYSQL QUERY RULES TO DISK;
+LOAD MYSQL VARIABLES TO RUNTIME;
+SAVE MYSQL VARIABLES TO DISK;
+LOAD ADMIN VARIABLES TO RUNTIME;
+SAVE ADMIN VARIABLES TO DISK;
+
+```
+
+```angular2html
+mysql -u fish -ppassword -h 172.88.88.100 -P6033 -e"SELECT @@port"
+mysql -u fish -ppassword -h 172.88.88.100 -P6033 --prompt 'FISH > '
+
+sysbench --db-driver=mysql --mysql-host=172.88.88.103 --mysql-port=3306 --mysql-user=fixh --mysql-password=password --mysql-db=fishfish --table-size=1000000 --tables=10 --threads=5 --time=300 --events=0 oltp_point_select prepare
+sysbench --db-driver=mysql --mysql-host=172.88.88.100 --mysql-port=6033 --mysql-user=fish --mysql-password=password --mysql-db=fishfish --table-size=1000000 --tables=10 --threads=5 --time=300 --events=0 oltp_point_select run > report.txt
+
+
 ```
