@@ -214,7 +214,7 @@ SELECT * FROM performance_schema.replication_group_members;
 
 - test
 ```test
-CREATE DATABASES fish1;
+CREATE DATABASE fish1;
 use fish1;
 CREATE TABLE user ( username VARCHAR(255), age INT, id INT AUTO_INCREMENT PRIMARY KEY);
 INSERT INTO user (username, age) VALUES ('fish-1', 25);
