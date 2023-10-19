@@ -360,4 +360,13 @@ docker restart mysql3
 docker restart mysql2
 docker restart mysql1
 ```
+    
+# 单主切换到多主
+```
+SELECT group_replication_switch_to_multi_primary_mode()
+```
 
+# 多主切换到单主
+```
+SELECT group_replication_switch_to_single_primary_mode(‘7edd8b92-b077-11eb-8ffe-000c2936760d’);
+```
