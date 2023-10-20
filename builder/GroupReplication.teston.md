@@ -475,3 +475,11 @@ sysbench --db-driver=mysql --mysql-host=172.88.88.100 --mysql-port=6033 --mysql-
 
 
 ```
+
+# proxysql 查询
+```
+## 查询每个节点的使用状况、链接数量等
+SELECT * FROM stats.stats_mysql_connection_pool;
+## 查询各种sql操作的数量
+SELECT * FROM stats_mysql_commands_counters WHERE Total_cnt;
+```
