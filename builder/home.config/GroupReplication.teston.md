@@ -20,7 +20,7 @@ sudo rm -rf mysql
 mkdir mysql
 rm my.cnf
 cp my.cnf.bk my.cnf
-docker run -d --hostname mysql-fish-server-01 --name=mysql-fish-server-01 --net=host --restart=always -e MYSQL_ROOT_PASSWORD=Dapangyu1204QWE -v /home/zhaoyihuan/mysql-fish-server/01/mysql:/var/lib/mysql -v /home/zhaoyihuan/mysql-fish-server/01/my.cnf:/etc/my.cnf -v /home/zhaoyihuan/mysql-fish-server/01/hosts:/etc/hosts mysql:latest
+docker run -d --hostname mysql-fish-server-01 --name=mysql-fish-server-01 --net=host --restart=always -e MYSQL_ROOT_PASSWORD=Dapangyu1204QWE -v /home/zhaoyihuan/mysql-fish-server/01/mysql:/var/lib/mysql -v /home/zhaoyihuan/mysql-fish-server/01/my.cnf:/etc/my.cnf -v /home/zhaoyihuan/mysql-fish-server/01/hosts:/etc/hosts mysql:8.1.0
 docker exec -it mysql-fish-server-01 bash
 
 
@@ -84,10 +84,12 @@ SELECT * FROM performance_schema.replication_group_members;
 
 - mysql-fish-server-02
 ```
+docker rm -f mysql-fish-server-02
 sudo rm -rf mysql
 mkdir mysql
+rm my.cnf
 cp my.cnf.bk my.cnf
-docker run -d --hostname mysql-fish-server-02 --name=mysql-fish-server-02 --net=host --restart=always -e MYSQL_ROOT_PASSWORD=Dapangyu1204QWE -v /home/zhaoyihuan/mysql-fish-server/02/mysql:/var/lib/mysql -v /home/zhaoyihuan/mysql-fish-server/02/my.cnf:/etc/my.cnf -v /home/zhaoyihuan/mysql-fish-server/02/hosts:/etc/hosts mysql:latest
+docker run -d --hostname mysql-fish-server-02 --name=mysql-fish-server-02 --net=host --restart=always -e MYSQL_ROOT_PASSWORD=Dapangyu1204QWE -v /home/zhaoyihuan/mysql-fish-server/02/mysql:/var/lib/mysql -v /home/zhaoyihuan/mysql-fish-server/02/my.cnf:/etc/my.cnf -v /home/zhaoyihuan/mysql-fish-server/02/hosts:/etc/hosts mysql:8.1.0
 
 docker exec -it mysql-fish-server-02 bash
 
@@ -117,11 +119,11 @@ transaction_write_set_extraction=XXHASH64
 plugin_load_add='group_replication.so'
 group_replication_group_name="3955DFE7-55C4-52B5-2283-1A90677C78B9"
 group_replication_start_on_boot=off
-group_replication_local_address= "192.168.111.200:33061"
-group_replication_group_seeds= "192.168.111.200:33061,192.168.111.198:33061"
-group_replication_ip_allowlist="192.168.111.200,192.168.111.198"
+group_replication_local_address= "192.168.111.149:33061"
+group_replication_group_seeds= "192.168.111.200:33061,192.168.111.149:33061"
+group_replication_ip_allowlist="192.168.111.200,192.168.111.149"
 group_replication_bootstrap_group=off
-max_connections=500
+max_connections=150
 EOF
 
 # 重启mysql
@@ -139,7 +141,7 @@ GRANT BACKUP_ADMIN ON *.* TO rpl_user@'%';
 FLUSH PRIVILEGES;
 SET SQL_LOG_BIN=1;
 
-set global group_replication_ip_allowlist="192.168.111.200,192.168.111.198";
+set global group_replication_ip_allowlist="192.168.111.200,192.168.111.149";
 CHANGE MASTER TO MASTER_USER='rpl_user', MASTER_PASSWORD='Rpl_user123' FOR CHANNEL 'group_replication_recovery';
 
 START GROUP_REPLICATION;
