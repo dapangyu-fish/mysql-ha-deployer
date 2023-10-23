@@ -15,11 +15,12 @@
 
 - mysql-fish-server-01
 ```
-sudo rm -rf mysql-fish-server-01
+docker rm -f mysql-fish-server-01
+sudo rm -rf mysql
 mkdir mysql
+rm my.cnf
 cp my.cnf.bk my.cnf
 docker run -d --hostname mysql-fish-server-01 --name=mysql-fish-server-01 --net=host --restart=always -e MYSQL_ROOT_PASSWORD=Dapangyu1204QWE -v /home/zhaoyihuan/mysql-fish-server/01/mysql:/var/lib/mysql -v /home/zhaoyihuan/mysql-fish-server/01/my.cnf:/etc/my.cnf -v /home/zhaoyihuan/mysql-fish-server/01/hosts:/etc/hosts mysql:latest
-
 docker exec -it mysql-fish-server-01 bash
 
 
@@ -35,7 +36,7 @@ exit
 cat <<EOF > /etc/my.cnf
 [mysqld]
 disabled_storage_engines="MyISAM,BLACKHOLE,FEDERATED,ARCHIVE,MEMORY"
-server_id=2 #其它节点相应修改，不能重复
+server_id=1 #其它节点相应修改，不能重复
 gtid_mode=ON
 enforce_gtid_consistency=ON
 binlog_checksum=NONE
