@@ -438,8 +438,8 @@ mysql -u fish -ppassword -h 192.168.111.149 -P6033 -e"SELECT @@port"
 mysql -u fish -ppassword -h 192.168.111.200 -P6033 --prompt 'FISH > '
 mysql -u fish -ppassword -h 192.168.111.149 -P6033 --prompt 'FISH > '
 
-sysbench --db-driver=mysql --mysql-host=192.168.111.200 --mysql-port=3306 --mysql-user=fixh --mysql-password=password --mysql-db=fishfish --table-size=1000000 --tables=10 --threads=5 --time=300 --events=0 oltp_point_select prepare
-sysbench --db-driver=mysql --mysql-host=192.168.111.149 --mysql-port=6033 --mysql-user=fish --mysql-password=password --mysql-db=fishfish --table-size=1000000 --tables=10 --threads=5 --time=300 --events=0 oltp_point_select run > report.txt
+sysbench --db-driver=mysql --mysql-host=192.168.111.200 --mysql-port=6033 --mysql-user=fish --mysql-password=password --mysql-db=fishfish --table-size=100000 --tables=500 --threads=50 --time=300 --events=0 oltp_point_select prepare
+sysbench --db-driver=mysql --mysql-host=192.168.111.149 --mysql-port=6033 --mysql-user=fish --mysql-password=password --mysql-db=fishfish --table-size=100000 --tables=500 --threads=50 --time=300 --events=0 oltp_point_select run > report.txt
 
 
 ```
