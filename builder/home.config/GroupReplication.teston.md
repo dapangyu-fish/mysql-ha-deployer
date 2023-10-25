@@ -1,14 +1,4 @@
 # mysql-ha-deployer
-- create bridge
-```create bridge
-```
-- clean all
-```clean all
-
-
-
-```
-
 
 # https://blog.51cto.com/u_15080860/6075927
 ```angular2html
