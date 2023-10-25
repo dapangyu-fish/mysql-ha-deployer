@@ -1,14 +1,4 @@
 # mysql-ha-deployer
-- create bridge
-```create bridge
-```
-- clean all
-```clean all
-
-
-
-```
-
 
 # https://blog.51cto.com/u_15080860/6075927
 ```angular2html
@@ -292,4 +282,18 @@ sysbench --db-driver=mysql --mysql-host=192.168.111.149 --mysql-port=6033 --mysq
 SELECT * FROM stats.stats_mysql_connection_pool;
 ## 查询各种sql操作的数量
 SELECT * FROM stats_mysql_commands_counters WHERE Total_cnt;
+
+
+## 更新mysql 实例的权重
+UPDATE mysql_servers SET weight = 2 WHERE hostname = '192.168.111.200';
+LOAD MYSQL USERS TO RUNTIME;
+SAVE MYSQL USERS TO DISK;
+LOAD MYSQL SERVERS TO RUNTIME;
+SAVE MYSQL SERVERS TO DISK;
+LOAD MYSQL QUERY RULES TO RUNTIME;
+SAVE MYSQL QUERY RULES TO DISK;
+LOAD MYSQL VARIABLES TO RUNTIME;
+SAVE MYSQL VARIABLES TO DISK;
+LOAD ADMIN VARIABLES TO RUNTIME;
+SAVE ADMIN VARIABLES TO DISK;
 ```
