@@ -17,10 +17,10 @@ docker run --net ha-mysql --ip 172.88.88.2 -p 16032:6032 -p 16033:6033 -p 16070:
 ```
 
 ```docker deploy mysql
-docker run --net ha-mysql --ip 172.88.88.3 --restart=always --name mysql-master-1 -e MYSQL_ROOT_PASSWORD=password -d -v /home/zhaoyihuan/mysql/master-1/my.cnf:/etc/my.cnf mysql:latest
-docker run --net ha-mysql --ip 172.88.88.4 --restart=always --name mysql-master-2 -e MYSQL_ROOT_PASSWORD=password -d -v /home/zhaoyihuan/mysql/master-2/my.cnf:/etc/my.cnf mysql:latest
-docker run --net ha-mysql --ip 172.88.88.13 --restart=always --name mysql-slave-1 -e MYSQL_ROOT_PASSWORD=password -d -v /home/zhaoyihuan/mysql/slave-1/my.cnf:/etc/my.cnf mysql:latest
-docker run --net ha-mysql --ip 172.88.88.14 --restart=always --name mysql-slave-2 -e MYSQL_ROOT_PASSWORD=password -d -v /home/zhaoyihuan/mysql/slave-2/my.cnf:/etc/my.cnf mysql:latest
+docker run --net ha-mysql --ip 172.88.88.3 --restart=always --name mysql-master-1 -e MYSQL_ROOT_PASSWORD=password -d -v /home/zhaoyihuan/mysql/master-1/my.cnf:/etc/my.cnf mysql:8.2
+docker run --net ha-mysql --ip 172.88.88.4 --restart=always --name mysql-master-2 -e MYSQL_ROOT_PASSWORD=password -d -v /home/zhaoyihuan/mysql/master-2/my.cnf:/etc/my.cnf mysql:8.2
+docker run --net ha-mysql --ip 172.88.88.13 --restart=always --name mysql-slave-1 -e MYSQL_ROOT_PASSWORD=password -d -v /home/zhaoyihuan/mysql/slave-1/my.cnf:/etc/my.cnf mysql:8.2
+docker run --net ha-mysql --ip 172.88.88.14 --restart=always --name mysql-slave-2 -e MYSQL_ROOT_PASSWORD=password -d -v /home/zhaoyihuan/mysql/slave-2/my.cnf:/etc/my.cnf mysql:8.2
 ```
 
 ```in proxysql
